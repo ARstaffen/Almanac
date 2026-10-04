@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17302C">
+<title>Almanac</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0EA; --surface:#F8F9F5; --ink:#17302C; --muted:#5C6F69; --line:#CFD6CC;
+  --men:#A8324A; --fol:#4F8A62; --ovu:#C98F22; --lut:#6A5A82;
+  --display:"Fraunces", Georgia, "Times New Roman", serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F1F1D; --surface:#172C29; --ink:#E6EDE6; --muted:#9BADA6; --line:#2B443F;
+    --men:#E0637B; --fol:#7FBF92; --ovu:#E8B85A; --lut:#A594C4;
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ovu);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;line-height:1.15}
+h2{font-size:1.5rem}
+h3{font-size:1.125rem;margin-top:1.75rem}
+p{margin:.5rem 0}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+
+#app{max-width:520px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px)}
+header.top{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 6px}
+header.top .name{font-family:var(--display);font-size:1.25rem;font-weight:600}
+.iconbtn{background:none;border:0;padding:8px;border-radius:50%;display:flex;align-items:center;gap:6px}
+.syncdot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.syncdot.on{background:var(--fol)} .syncdot.pending{background:var(--ovu)}
+main{flex:1;padding:8px 20px calc(96px + env(safe-area-inset-bottom,0px))}
+.view{display:none} .view.active{display:block}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav.tabs div{display:flex;width:100%;max-width:520px}
+nav.tabs button{flex:1;background:none;border:0;padding:12px 4px 14px;font-size:.8125rem;font-weight:500;color:var(--muted);
+  border-top:2px solid transparent;margin-top:-1px}
+nav.tabs button[aria-current="page"]{color:var(--ink);border-top-color:var(--ink);font-weight:600}
+
+/* Today */
+.dial{display:block;width:min(78vw,300px);margin:8px auto 0}
+.dial text{font-family:var(--display);fill:var(--ink)}
+.dial .lbl{font-family:var(--body);fill:var(--muted);font-size:13px}
+.status{text-align:center;margin:6px 0 18px}
+.status .line1{font-weight:600}
+.btn{display:block;width:100%;padding:14px 18px;border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);font-weight:600;text-align:center}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.quiet{border-color:var(--line);background:transparent;color:var(--ink);font-weight:500}
+.btn + .btn{margin-top:10px}
+.logged{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.tag{font-size:.8125rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+ul.tips{list-style:none;padding:0;margin:.75rem 0 0}
+ul.tips li{padding:14px 0;border-top:1px solid var(--line)}
+ul.tips li:last-child{border-bottom:1px solid var(--line)}
+ul.tips b{display:block;font-weight:600}
+ul.tips span{color:var(--muted);font-size:.9375rem}
+.phasebar{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:1px}
+
+/* Calendar */
+.calhead{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}
+.calhead button{background:none;border:1px solid var(--line);border-radius:50%;width:40px;height:40px;font-size:1.1rem}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.grid .dow{text-align:center;font-size:.75rem;color:var(--muted);padding-bottom:4px}
+.day{aspect-ratio:1;border:0;background:none;border-radius:50%;position:relative;font-size:.9375rem;display:flex;align-items:center;justify-content:center}
+.day.per{background:var(--men);color:#fff;font-weight:600}
+.day.spot{box-shadow:inset 0 0 0 2px var(--men)}
+.day.pper{box-shadow:inset 0 0 0 1.5px var(--men);border-radius:50%;opacity:.75}
+.day.pper{background:repeating-linear-gradient(135deg,transparent 0 4px,color-mix(in srgb,var(--men) 22%,transparent) 4px 8px)}
+.day.fert::after{content:"";position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--ovu)}
+.day.ovu{box-shadow:inset 0 0 0 2px var(--ovu)}
+.day.has::before{content:"";position:absolute;top:5px;width:4px;height:4px;border-radius:50%;background:var(--ink)}
+.day.per.has::before{background:#fff}
+.day.today{font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.day:disabled{color:var(--muted);cursor:default}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:16px;font-size:.8125rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:6px}
+
+/* Patterns */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px;margin:12px 0 4px}
+.stats div b{display:block;font-family:var(--display);font-size:1.75rem;font-weight:600;line-height:1.1}
+.stats div span{font-size:.875rem;color:var(--muted)}
+.bars{margin-top:10px}
+.barrow{display:grid;grid-template-columns:92px 1fr 44px;align-items:center;gap:10px;padding:5px 0;font-size:.875rem}
+.barrow .track{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.barrow .fill{height:100%;border-radius:5px}
+.barrow .v{text-align:right;color:var(--muted)}
+.empty{border:1px dashed var(--line);border-radius:14px;padding:18px;margin-top:14px;color:var(--muted)}
+
+/* Learn */
+.phasepick{display:flex;gap:6px;overflow-x:auto;margin:10px -20px 0;padding:0 20px 4px}
+.phasepick button{white-space:nowrap;border:1px solid var(--line);background:none;border-radius:999px;padding:8px 14px;font-size:.875rem}
+.phasepick button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.learn ul{padding-left:1.1rem;margin:.5rem 0}
+.learn li{margin:.5rem 0}
+.learn li b{font-weight:600}
+.note{font-size:.8125rem;color:var(--muted);border-top:1px solid var(--line);margin-top:28px;padding-top:12px}
+
+/* Sheets */
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:10;display:none;overflow-y:auto;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 20px calc(28px + env(safe-area-inset-bottom,0px))}
+.sheet.open{display:block}
+.sheet .inner{max-width:520px;margin:0 auto}
+.sheethead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sheethead button{background:none;border:0;padding:8px 0;font-weight:600}
+.field{margin-top:22px}
+.field > label, .field > .lab{display:block;font-weight:600;margin-bottom:8px}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{flex:1;border:0;border-right:1px solid var(--line);background:none;padding:11px 2px;font-size:.875rem;min-width:0}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:600}
+.seg.flow button[aria-pressed="true"]{background:var(--men);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{border:1px solid var(--line);background:none;border-radius:999px;padding:8px 14px;font-size:.9375rem}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input[type=text],input[type=email],input[type=password],input[type=number],textarea{
+  width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+textarea{min-height:88px;resize:vertical}
+.row{display:flex;gap:12px;align-items:center}
+.row input[type=number]{width:96px}
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.daynav button{background:none;border:1px solid var(--line);border-radius:50%;width:40px;height:40px}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:.9375rem;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <span class="name">Almanac</span>
+    <button class="iconbtn" id="openAccount" aria-label="Backup and account">
+      <span class="syncdot" id="syncdot"></span><span class="small" id="synclabel">Backup</span>
+    </button>
+  </header>
+  <main>
+    <section class="view active" id="v-today"></section>
+    <section class="view" id="v-calendar"></section>
+    <section class="view" id="v-patterns"></section>
+    <section class="view learn" id="v-learn"></section>
+  </main>
+</div>
+<nav class="tabs" aria-label="Sections"><div>
+  <button data-tab="today" aria-current="page">Today</button>
+  <button data-tab="calendar">Calendar</button>
+  <button data-tab="patterns">Patterns</button>
+  <button data-tab="learn">Learn</button>
+</div></nav>
+
+<div class="sheet" id="logsheet" role="dialog" aria-modal="true" aria-label="Daily log"><div class="inner" id="loginner"></div></div>
+<div class="sheet" id="acctsheet" role="dialog" aria-modal="true" aria-label="Backup and account"><div class="inner" id="acctinner"></div></div>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+"use strict";
+/* ---------- config ---------- */
+const SB_URL = "https://gdefznymigdepxbvifnc.supabase.co";
+const SB_KEY = "sb_publishable_Uh0RMZLNsTIyo-NPM8Vsjg_Vsr4sK4l";
+const STORE = "almanac_logs_v1";
+
+/* ---------- helpers ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate()+n); return fmt(d); };
+const diff = (a, b) => { const A = parse(a), B = parse(b); return Math.round((Date.UTC(A.getFullYear(),A.getMonth(),A.getDate()) - Date.UTC(B.getFullYear(),B.getMonth(),B.getDate()))/864e5); };
+const today = () => fmt(new Date());
+const nice = (s, opts={month:"short", day:"numeric"}) => parse(s).toLocaleDateString(undefined, opts);
+const mean = a => a.reduce((x,y)=>x+y,0)/a.length;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),2200); }
+
+/* ---------- storage ---------- */
+let logs = {};
+try { logs = JSON.parse(localStorage.getItem(STORE) || "{}") || {}; } catch(e){ logs = {}; }
+function persist(){ try { localStorage.setItem(STORE, JSON.stringify(logs)); } catch(e){ toast("Could not save on this device. Storage may be full."); } }
+const getLog = d => (logs[d] && !logs[d].data._deleted) ? logs[d].data : null;
+function setLog(d, data){ logs[d] = { data, u: new Date().toISOString(), dirty: true }; persist(); sync(); }
+const isPeriod = l => !!l && (l.flow|0) >= 2;
+
+/* ---------- cycle maths ---------- */
+function model(){
+  const pdays = Object.keys(logs).filter(d => isPeriod(getLog(d))).sort();
+  const starts = [];
+  pdays.forEach((d,i) => { if (i===0 || diff(d, pdays[i-1]) > 7) starts.push(d); });
+  const plen = starts.map((s,i) => {
+    const next = starts[i+1];
+    const run = pdays.filter(d => d >= s && (!next || d < next) && diff(d,s) < 12);
+    return diff(run[run.length-1], s) + 1;
+  });
+  const clen = [];
+  for (let i=1;i<starts.length;i++){ const L = diff(starts[i], starts[i-1]); if (L>=15 && L<=60) clen.push(L); }
+  const recentC = clen.slice(-6), recentP = plen.slice(-6);
+  const avgCycle = recentC.length ? Math.round(mean(recentC)) : 28;
+  const avgPeriod = recentP.length ? Math.min(10, Math.max(2, Math.round(mean(recentP)))) : 5;
+  let sd = null;
+  if (recentC.length >= 3){ const m = mean(recentC); sd = Math.sqrt(mean(recentC.map(x => (x-m)**2))); }
+  const last = starts[starts.length-1] || null;
+  let next = null, late = 0;
+  if (last){
+    next = addDays(last, avgCycle);
+    if (next <= today()){ late = diff(today(), next); next = addDays(today(), 1); }
+  }
+  return { starts, plen, clen, avgCycle, avgPeriod, sd, last, next, late };
+}
+function phaseAt(date, m){
+  if (!m.starts.length || date < m.starts[0]) return null;
+  let i = -1; for (let k=0;k<m.starts.length;k++) if (m.starts[k] <= date) i = k;
+  let s = m.starts[i], L, predicted = false, pl = m.plen[i] || m.avgPeriod;
+  const nextActual = m.starts[i+1];
+  if (nextActual) L = diff(nextActual, s);
+  else if (date < m.next) L = diff(m.next, s);
+  else { const k = Math.floor(diff(date, m.next) / m.avgCycle); s = addDays(m.next, k*m.avgCycle); L = m.avgCycle; pl = m.avgPeriod; predicted = true; }
+  const day = diff(date, s) + 1;
+  const ov = Math.max(pl + 2, L - 14);
+  let phase;
+  if (isPeriod(getLog(date)) || day <= pl) phase = "menstrual";
+  else if (day < ov - 1) phase = "follicular";
+  else if (day <= ov + 1) phase = "ovulatory";
+  else phase = "luteal";
+  return { day, L, ov, pl, phase, predicted, start: s, fertile: day >= ov-5 && day <= ov+1, isOv: day === ov };
+}
+
+/* ---------- content ---------- */
+const PH = {
+  menstrual: { name:"Menstrual", color:"var(--men)",
+    now:"Estrogen and progesterone are at their lowest and the uterine lining is shedding.",
+    happening:[
+      "Prostaglandins make the uterus contract to shed its lining. More prostaglandins generally means stronger cramps.",
+      "Those same prostaglandins act on the bowel next door, which is why looser stools are common in the first days.",
+      "Low hormones can mean lower energy for a day or two, then estrogen starts climbing again."],
+    helps:[
+      ["Heat on the lower belly","A heating pad or hot water bottle relaxes the uterine muscle. Trials have found steady low heat works about as well as ibuprofen for cramps."],
+      ["Anti-inflammatories, taken early","Ibuprofen and naproxen block prostaglandin production, so they work best at the first sign of cramps or bleeding rather than once pain peaks. Take with food. Skip them if you have kidney problems, stomach ulcers, or have been told to avoid NSAIDs."],
+      ["Gentle movement","Walking, stretching, or yoga improves pelvic blood flow. Reviews suggest regular exercise lowers period pain over time."],
+      ["Ginger","Small trials suggest 750 to 2,000 mg of ginger powder a day in the first three days eases cramps. The evidence is modest but the risk is low."],
+      ["Iron-rich food","Periods are the most common cause of low iron. Pair beans, lentils, red meat, or leafy greens with vitamin C to absorb more."]],
+    quirks:[
+      "A whole period typically adds up to only about 2 to 3 tablespoons of blood. The rest of the fluid is tissue and mucus.",
+      "Period blood can be bright red, dark red, or brown. Brown is just older blood that took longer to leave."] },
+  follicular: { name:"Follicular", color:"var(--fol)",
+    now:"Estrogen is rising as a follicle matures and the uterine lining rebuilds.",
+    happening:[
+      "Follicle-stimulating hormone prompts a group of follicles to grow. One becomes dominant and produces more and more estrogen.",
+      "Rising estrogen rebuilds the uterine lining and tends to lift mood and energy.",
+      "Cervical fluid gradually goes from dry or sticky to wetter and creamier as ovulation approaches."],
+    helps:[
+      ["Use the energy if it shows up","Many people feel more motivated and resilient in this stretch. It can be a good time for harder workouts or demanding projects."],
+      ["Go by feel for training","Claims that you must train a certain way in each phase run ahead of the evidence. Current reviews find the effect of cycle phase on performance is small and varies a lot between people."],
+      ["Restock iron and protein","If your period was heavy, this is when your body rebuilds. Regular meals with protein and iron help."]],
+    quirks:[
+      "Skin is often at its clearest now, since estrogen is up and oil production is relatively low.",
+      "The follicular phase is the flexible part of the cycle. When a cycle runs long or short, this is usually the phase that changed."] },
+  ovulatory: { name:"Ovulatory", color:"var(--ovu)",
+    now:"Estrogen peaks and a surge of luteinizing hormone triggers the release of an egg.",
+    happening:[
+      "The LH surge releases the egg roughly 24 to 36 hours later. The egg survives about 12 to 24 hours.",
+      "Sperm can survive up to 5 days, so the fertile window is about 6 days ending on ovulation day.",
+      "Cervical fluid becomes clear and stretchy, like raw egg white."],
+    helps:[
+      ["Notice one-sided twinges","A brief ache on one side of the lower belly around now is called mittelschmerz, or middle pain. It is common and usually harmless."],
+      ["Treat the date as an estimate","This app estimates ovulation by counting back from your expected period. Real ovulation can shift by several days, so do not rely on it alone to prevent or plan pregnancy."],
+      ["To pinpoint it","LH urine strips catch the surge before ovulation. Basal body temperature confirms it afterward with a sustained rise of about 0.5 to 1 degree F."]],
+    quirks:[
+      "After ovulation, progesterone raises your resting body temperature slightly, and it stays up until your next period.",
+      "Ovaries do not strictly take turns. Which side ovulates each cycle is closer to random."] },
+  luteal: { name:"Luteal", color:"var(--lut)",
+    now:"Progesterone dominates. If no pregnancy occurs, both hormones fall in the final days and trigger your period.",
+    happening:[
+      "The emptied follicle becomes the corpus luteum and makes progesterone, which holds the lining in place.",
+      "Progesterone slows digestion, which is behind a lot of premenstrual bloating and constipation.",
+      "PMS symptoms like irritability, breast tenderness, and low mood cluster in the last week as hormones drop."],
+    helps:[
+      ["Eat a bit more, on purpose","Appetite and energy use both rise somewhat in this phase, so cravings have a real physiological basis. Regular meals with complex carbs and protein take the edge off."],
+      ["Calcium","A large trial found 1,200 mg of calcium a day cut overall PMS symptoms by nearly half after three cycles. Dairy, fortified foods, or a supplement all count."],
+      ["Keep moving","Regular aerobic exercise is one of the better supported ways to ease PMS mood and physical symptoms."],
+      ["Cool, consistent sleep","Your core temperature runs higher now, which can make sleep lighter. A cooler room and a steady bedtime help."],
+      ["Ease up on salt and alcohol","Both can worsen bloating and sleep in the premenstrual week. Some people also find cutting back caffeine helps breast tenderness and anxiety."],
+      ["Vitamin B6","There is some evidence for PMS mood symptoms at up to 100 mg a day. Do not go higher, since large doses can damage nerves."]],
+    quirks:[
+      "Premenstrual breakouts are real. Many acne-prone people report a flare in the week before their period as estrogen falls and oil production wins out.",
+      "The luteal phase is the steady part of the cycle, usually 12 to 14 days regardless of total cycle length."] }
+};
+const GENERAL = [
+  "Only about 1 in 8 cycles is exactly 28 days. Anything from 21 to 35 days is considered typical for adults.",
+  "A few days of variation from one cycle to the next is normal. Stress, illness, travel, and big changes in sleep or exercise can all delay ovulation and lengthen a cycle.",
+  "The idea that people who live together sync their periods has not held up in careful studies. Overlap happens by chance."
+];
+const DOCTOR = [
+  "Cycles consistently shorter than 21 days or longer than 35, or no period for 3 months when not pregnant.",
+  "Soaking through a pad or tampon every hour for several hours, clots larger than a quarter, or bleeding longer than 7 days.",
+  "Pain that over-the-counter medicine does not touch or that keeps you from work or daily life.",
+  "Bleeding between periods or after sex, or a sudden change in your usual pattern.",
+  "Mood symptoms before your period that feel severe or unmanageable. Premenstrual dysphoric disorder is real and treatable.",
+  "Sudden high fever, rash, or feeling faint while using a tampon or cup. Remove it and get urgent care."
+];
+function symptomTips(l){
+  const t = [];
+  if (!l) return t;
+  if ((l.pain|0) >= 3) t.push(["For today's cramps","Start heat now and, if anti-inflammatories are safe for you, take them with food sooner rather than later. They block the prostaglandins causing the pain, so early doses work better."]);
+  if ((l.flow|0) === 4) t.push(["Heavy flow day","Drink extra fluids and eat something iron-rich. If you are soaking a pad or tampon every hour for several hours, call a doctor."]);
+  if (l.energy && l.energy <= 2) t.push(["Low energy","A short walk in daylight and a meal with protein and iron tend to help more than extra caffeine. If fatigue is constant and your periods are heavy, ask about an iron test."]);
+  if ((l.sleepq && l.sleepq <= 2) || (l.sleeph && l.sleeph < 6)) t.push(["After a rough night","Keep caffeine to the morning, get outside light early, and aim for your usual bedtime rather than a long nap."]);
+  if ((l.skin||[]).includes("Breakout")) t.push(["Breakout","Hormonal breakouts often sit along the jaw and chin. A gentle cleanser plus benzoyl peroxide or salicylic acid helps. Picking prolongs them."]);
+  if ((l.crave||[]).length) t.push(["Cravings","Have what you are craving alongside protein or fiber rather than fighting it. Magnesium-rich options like dark chocolate, nuts, and seeds fit the bill."]);
+  if ((l.mood||[]).some(x => ["Low","Anxious","Irritable","Weepy"].includes(x))) t.push(["Mood","Twenty minutes of movement that raises your heart rate reliably helps premenstrual mood. If this hits hard every cycle, it is worth raising with a doctor."]);
+  return t;
+}
+
+/* ---------- views ---------- */
+let tab = "today", calMonth = today().slice(0,7), learnPhase = null;
+
+function arcPath(f0, f1, r=118, cx=150, cy=150){
+  const a0 = f0*2*Math.PI - Math.PI/2, a1 = f1*2*Math.PI - Math.PI/2;
+  const x0 = cx + r*Math.cos(a0), y0 = cy + r*Math.sin(a0), x1 = cx + r*Math.cos(a1), y1 = cy + r*Math.sin(a1);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${(f1-f0)>.5?1:0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+function dial(p){
+  let arcs = `<circle cx="150" cy="150" r="118" fill="none" stroke="var(--line)" stroke-width="12"/>`, mark = "", mid;
+  if (p){
+    const L = Math.max(p.L, p.day), g = 0.006;
+    const segs = [["men",0,p.pl],["fol",p.pl,p.ov-2],["ovu",p.ov-2,p.ov+1],["lut",p.ov+1,L]];
+    arcs = segs.filter(s => s[2] > s[1]).map(s => `<path d="${arcPath(s[1]/L+g, s[2]/L-g)}" fill="none" stroke="var(--${s[0]})" stroke-width="12" stroke-linecap="round"/>`).join("");
+    const f = (p.day-0.5)/L, a = f*2*Math.PI - Math.PI/2;
+    mark = `<circle cx="${(150+118*Math.cos(a)).toFixed(2)}" cy="${(150+118*Math.sin(a)).toFixed(2)}" r="12" fill="var(--bg)" stroke="var(--ink)" stroke-width="4"/>`;
+    mid = `<text x="150" y="150" text-anchor="middle" font-size="64" font-weight="600">${p.day}</text>
+           <text x="150" y="104" text-anchor="middle" class="lbl">Cycle day</text>
+           <text x="150" y="186" text-anchor="middle" font-size="21">${PH[p.phase].name}</text>`;
+  } else {
+    mid = `<text x="150" y="158" text-anchor="middle" font-size="22">No cycle yet</text>`;
+  }
+  return `<svg class="dial" viewBox="0 0 300 300" role="img" aria-label="${p ? `Cycle day ${p.day}, ${PH[p.phase].name} phase` : "No cycle data yet"}">${arcs}${mark}${mid}</svg>`;
+}
+function logTags(l){
+  if (!l) return "";
+  const t = [];
+  if (l.flow) t.push(["Spotting","Light flow","Medium flow","Heavy flow"][l.flow-1]);
+  if (l.pain) t.push(`Pain ${l.pain}/5`);
+  if (l.energy) t.push(`Energy ${l.energy}/5`);
+  if (l.sleeph) t.push(`${l.sleeph} h sleep`);
+  (l.mood||[]).forEach(x => t.push(x));
+  (l.skin||[]).forEach(x => t.push(`Skin: ${x.toLowerCase()}`));
+  (l.crave||[]).forEach(x => t.push(`Craving ${x.toLowerCase()}`));
+  if (l.cravetext) t.push(`Craving ${l.cravetext}`);
+  return t.length ? `<div class="logged">${t.map(x => `<span class="tag">${esc(x)}</span>`).join("")}</div>` : "";
+}
+function renderToday(){
+  const m = model(), t = today(), p = phaseAt(t, m), l = getLog(t);
+  let status;
+  if (!p){
+    status = `<p class="line1">Start by logging a period day</p><p class="muted small">Open the calendar and mark the first day of your last period. Predictions begin from there.</p>`;
+  } else {
+    let l1;
+    if (isPeriod(l)) l1 = `Period day ${p.day}`;
+    else if (m.late > 0) l1 = `Period expected ${m.late} day${m.late>1?"s":""} ago`;
+    else if (m.late === 0 && diff(m.next, t) === 1 && addDays(m.last, m.avgCycle) <= t) l1 = "Period expected today";
+    else { const n = diff(m.next, t); l1 = `Next period in ${n} day${n>1?"s":""}, around ${nice(m.next)}`; }
+    const range = m.sd !== null ? `Your cycles vary by about ${Math.max(1, Math.round(m.sd))} day${Math.round(m.sd)>1?"s":""}.` : (m.clen.length ? "" : "Using a 28 day estimate until you have logged two periods.");
+    status = `<p class="line1">${l1}</p><p class="muted small">${PH[p.phase].now} ${range}</p>`;
+  }
+  let tips = "";
+  if (p){
+    const list = symptomTips(l).concat(PH[p.phase].helps.slice(0,3));
+    tips = `<h3><span class="phasebar" style="background:${PH[p.phase].color}"></span>Helpful right now</h3>
+      <ul class="tips">${list.map(x => `<li><b>${esc(x[0])}</b><span>${esc(x[1])}</span></li>`).join("")}</ul>
+      <p style="margin-top:14px"><button class="btn quiet" data-go="learn">Read about the ${PH[p.phase].name.toLowerCase()} phase</button></p>`;
+  }
+  $("#v-today").innerHTML = `${dial(p)}<div class="status">${status}</div>
+    <button class="btn" data-log="${t}">${l ? "Edit today's log" : "Log today"}</button>
+    ${!p ? `<button class="btn ghost" data-go="calendar">Open the calendar</button>` : ""}
+    ${logTags(l)}${tips}`;
+}
+function renderCalendar(){
+  const m = model(), t = today(), [y, mo] = calMonth.split("-").map(Number);
+  const first = new Date(y, mo-1, 1), n = new Date(y, mo, 0).getDate();
+  let cells = ["S","M","T","W","T","F","S"].map(d => `<div class="dow">${d}</div>`).join("");
+  for (let i=0;i<first.getDay();i++) cells += "<span></span>";
+  for (let d=1; d<=n; d++){
+    const ds = `${y}-${pad(mo)}-${pad(d)}`, l = getLog(ds), p = phaseAt(ds, m), c = ["day"];
+    if (isPeriod(l)) c.push("per"); else if (l && l.flow === 1) c.push("spot");
+    if (l) c.push("has");
+    if (p && ds > t){
+      if (p.predicted && p.day <= p.pl) c.push("pper");
+      else if (!p.predicted && ds >= m.next) c.push("pper");
+    }
+    if (p && ds >= t && !isPeriod(l)){ if (p.isOv) c.push("ovu"); else if (p.fertile) c.push("fert"); }
+    if (ds === t) c.push("today");
+    cells += `<button class="${c.join(" ")}" data-log="${ds}" ${ds > t ? "disabled" : ""} aria-label="${nice(ds,{month:"long",day:"numeric"})}${isPeriod(l)?", period":""}">${d}</button>`;
+  }
+  $("#v-calendar").innerHTML = `<div class="calhead">
+      <button data-cal="-1" aria-label="Previous month">&lsaquo;</button>
+      <h2>${first.toLocaleDateString(undefined,{month:"long",year:"numeric"})}</h2>
+      <button data-cal="1" aria-label="Next month">&rsaquo;</button></div>
+    <div class="grid">${cells}</div>
+    <div class="legend">
+      <span><i style="background:var(--men)"></i>Period</span>
+      <span><i style="box-shadow:inset 0 0 0 1.5px var(--men)"></i>Predicted period</span>
+      <span><i style="box-shadow:inset 0 0 0 2px var(--ovu)"></i>Estimated ovulation</span>
+      <span><i style="background:var(--ovu);width:6px;height:6px"></i>Fertile window</span>
+    </div>
+    <p class="muted small" style="margin-top:14px">Tap any past day to log or edit it. Predicted days are estimates and should not be used alone to prevent pregnancy.</p>`;
+}
+function renderPatterns(){
+  const m = model(), el = $("#v-patterns");
+  const days = Object.keys(logs).filter(d => getLog(d)).sort();
+  let html = `<h2>Patterns</h2>`;
+  if (m.starts.length < 2 || !m.clen.length){
+    el.innerHTML = html + `<div class="empty">Patterns appear once two periods are logged. You have logged ${m.starts.length}. Daily entries between periods make the patterns sharper.</div>`;
+    return;
+  }
+  const cmin = Math.min(...m.clen), cmax = Math.max(...m.clen);
+  html += `<div class="stats">
+    <div><b>${m.avgCycle} days</b><span>Average cycle${m.clen.length>1 ? `, ranging ${cmin} to ${cmax}` : ""}</span></div>
+    <div><b>${m.avgPeriod} days</b><span>Average period</span></div>
+    <div><b>${m.clen.length}</b><span>Full cycle${m.clen.length>1?"s":""} tracked</span></div>
+    <div><b>${nice(m.next)}</b><span>Next period estimate</span></div></div>`;
+  // cycle history
+  html += `<h3>Cycle lengths</h3><div class="bars">` + m.clen.slice(-8).map((L,i,arr) => {
+    const s = m.starts[m.starts.length - 1 - (arr.length - i)];
+    return `<div class="barrow"><span>${nice(s)}</span><div class="track"><div class="fill" style="width:${Math.min(100,L/45*100)}%;background:var(--ink)"></div></div><span class="v">${L} d</span></div>`;
+  }).join("") + `</div>`;
+  // per phase
+  const by = {menstrual:[],follicular:[],ovulatory:[],luteal:[]};
+  days.forEach(d => { const p = phaseAt(d, m); if (p && !p.predicted) by[p.phase].push([d, getLog(d), p]); });
+  const avg = (ph, k) => { const v = by[ph].map(x => x[1][k]).filter(x => x !== undefined && x !== null && x !== ""); return v.length ? mean(v.map(Number)) : null; };
+  const block = (title, k, max, unit) => {
+    const rows = Object.keys(by).map(ph => [ph, avg(ph,k)]).filter(r => r[1] !== null);
+    if (rows.length < 2) return "";
+    return `<h3>${title}</h3><div class="bars">` + rows.map(([ph,v]) =>
+      `<div class="barrow"><span>${PH[ph].name}</span><div class="track"><div class="fill" style="width:${Math.min(100,v/max*100)}%;background:${PH[ph].color}"></div></div><span class="v">${v.toFixed(1)}${unit}</span></div>`).join("") + `</div>`;
+  };
+  html += block("Average pain by phase","pain",5,"") + block("Average energy by phase","energy",5,"") + block("Average sleep by phase","sleeph",10," h");
+  // insights
+  const feats = {};
+  const add = (name, d, ph) => { (feats[name] = feats[name] || []).push([d, ph]); };
+  const total = Object.values(by).reduce((a,b)=>a+b.length,0);
+  Object.keys(by).forEach(ph => by[ph].forEach(([d,l]) => {
+    if ((l.pain|0) >= 3) add("Stronger pain", d, ph);
+    if (l.energy && l.energy <= 2) add("Low energy", d, ph);
+    if (l.sleepq && l.sleepq <= 2) add("Poor sleep", d, ph);
+    (l.mood||[]).forEach(x => add(`Feeling ${x.toLowerCase()}`, d, ph));
+    (l.skin||[]).filter(x => x !== "Clear").forEach(x => add(`${x} skin`, d, ph));
+    (l.crave||[]).forEach(x => add(`${x} cravings`, d, ph));
+  }));
+  const ins = [];
+  Object.entries(feats).forEach(([name, occ]) => {
+    if (occ.length < 3) return;
+    const pre = occ.filter(([d]) => m.starts.some(s => { const k = diff(s, d); return k >= 1 && k <= 3; })).length;
+    if (pre / occ.length >= 0.5){ ins.push(`${name}: usually in the 3 days before your period (${pre} of ${occ.length} times).`); return; }
+    let best = null;
+    Object.keys(by).forEach(ph => { const c = occ.filter(o => o[1] === ph).length, dn = by[ph].length; if (dn && (!best || c/dn > best.r)) best = { ph, c, dn, r: c/dn }; });
+    if (best && best.c >= 2 && best.r >= 1.5 * (occ.length/total)) ins.push(`${name}: most common in your ${PH[best.ph].name.toLowerCase()} phase (${best.c} of ${best.dn} logged days).`);
+  });
+  html += `<h3>What your logs suggest</h3>` + (ins.length
+    ? `<ul class="tips">${ins.slice(0,8).map(x => `<li><span style="color:var(--ink)">${esc(x)}</span></li>`).join("")}</ul>`
+    : `<div class="empty">Nothing stands out yet. Patterns need a symptom logged at least three times.</div>`);
+  html += `<p class="note">Patterns are drawn only from your own entries and show timing, not cause.</p>`;
+  el.innerHTML = html;
+}
+function renderLearn(){
+  const m = model(), p = phaseAt(today(), m);
+  const cur = learnPhase || (p ? p.phase : "menstrual"), d = PH[cur];
+  $("#v-learn").innerHTML = `<h2>How your cycle works</h2>
+    <div class="phasepick">${Object.keys(PH).map(k => `<button data-phase="${k}" aria-pressed="${k===cur}">${PH[k].name}${p && p.phase===k ? " (now)" : ""}</button>`).join("")}</div>
+    <h3><span class="phasebar" style="background:${d.color}"></span>What is happening</h3>
+    <ul>${d.happening.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    <h3>What helps</h3>
+    <ul>${d.helps.map(x => `<li><b>${esc(x[0])}.</b> ${esc(x[1])}</li>`).join("")}</ul>
+    <h3>Worth knowing</h3>
+    <ul>${d.quirks.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    <h3>Across the whole cycle</h3>
+    <ul>${GENERAL.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    <h3>When to see a doctor</h3>
+    <ul>${DOCTOR.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    <p class="note">General health information, not medical advice. Check supplements and medicines against your own conditions and prescriptions with a pharmacist or doctor.</p>`;
+}
+function render(){
+  ({today:renderToday, calendar:renderCalendar, patterns:renderPatterns, learn:renderLearn})[tab]();
+}
+function go(t){
+  tab = t;
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "v-"+t));
+  document.querySelectorAll("nav.tabs button").forEach(b => b.dataset.tab === t ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
+  render(); window.scrollTo(0,0);
+}
+
+/* ---------- log sheet ---------- */
+let draft = null, draftDate = null;
+const seg = (k, labels, vals, cls="") => `<div class="seg ${cls}">${labels.map((lb,i) => `<button type="button" data-seg="${k}" data-v="${vals[i]}" aria-pressed="${draft[k] === vals[i] || (!draft[k] && vals[i] === 0)}">${lb}</button>`).join("")}</div>`;
+const chips = (k, opts) => `<div class="chips">${opts.map(o => `<button type="button" data-chip="${k}" data-v="${o}" aria-pressed="${(draft[k]||[]).includes(o)}">${o}</button>`).join("")}</div>`;
+function openLog(d){
+  draftDate = d; draft = JSON.parse(JSON.stringify(getLog(d) || {}));
+  const t = today();
+  $("#loginner").innerHTML = `
+    <div class="sheethead"><button type="button" data-close>Cancel</button><button type="button" data-save>Save log</button></div>
+    <div class="daynav"><button type="button" data-shift="-1" aria-label="Previous day">&lsaquo;</button>
+      <h2>${d === t ? "Today" : nice(d,{weekday:"short",month:"short",day:"numeric"})}</h2>
+      <button type="button" data-shift="1" aria-label="Next day" ${d >= t ? "disabled style='opacity:.3'" : ""}>&rsaquo;</button></div>
+    <div class="field"><span class="lab">Flow</span>${seg("flow",["None","Spotting","Light","Medium","Heavy"],[0,1,2,3,4],"flow")}</div>
+    <div class="field"><span class="lab">Cramps or pain</span>${seg("pain",["None","1","2","3","4","5"],[0,1,2,3,4,5])}</div>
+    <div class="field"><span class="lab">Mood</span>${chips("mood",["Calm","Happy","Driven","Irritable","Anxious","Low","Weepy","Foggy"])}</div>
+    <div class="field"><span class="lab">Energy, low to high</span>${seg("energy",["1","2","3","4","5"],[1,2,3,4,5])}</div>
+    <div class="field"><label for="sleeph">Sleep last night</label>
+      <div class="row"><input id="sleeph" type="number" inputmode="decimal" min="0" max="16" step="0.5" placeholder="Hours" value="${esc(draft.sleeph ?? "")}"><span class="muted small">hours</span></div>
+      <p class="muted small" style="margin:10px 0 6px">Quality, poor to great</p>${seg("sleepq",["1","2","3","4","5"],[1,2,3,4,5])}</div>
+    <div class="field"><span class="lab">Skin</span>${chips("skin",["Clear","Oily","Dry","Breakout","Sensitive"])}</div>
+    <div class="field"><span class="lab">Food cravings</span>${chips("crave",["Sweet","Salty","Chocolate","Carbs","Fried"])}
+      <input id="cravetext" type="text" style="margin-top:10px" maxlength="80" placeholder="Anything specific" value="${esc(draft.cravetext || "")}"></div>
+    <div class="field"><label for="notes">Notes</label><textarea id="notes" maxlength="1000" placeholder="Remedies tried, anything unusual">${esc(draft.notes || "")}</textarea></div>
+    <div class="field"><button type="button" class="btn" data-save>Save log</button>
+      ${getLog(d) ? `<button type="button" class="btn quiet" data-clear>Clear this day</button>` : ""}</div>`;
+  $("#logsheet").classList.add("open"); $("#logsheet").scrollTop = 0;
+}
+function closeSheets(){ document.querySelectorAll(".sheet").forEach(s => s.classList.remove("open")); }
+function readInputs(){
+  const h = parseFloat($("#sleeph").value);
+  if (!isNaN(h) && h >= 0 && h <= 24) draft.sleeph = h; else delete draft.sleeph;
+  const c = $("#cravetext").value.trim(); if (c) draft.cravetext = c; else delete draft.cravetext;
+  const n = $("#notes").value.trim(); if (n) draft.notes = n; else delete draft.notes;
+}
+function saveLog(){
+  readInputs();
+  Object.keys(draft).forEach(k => { if (draft[k] === 0 || (Array.isArray(draft[k]) && !draft[k].length)) delete draft[k]; });
+  if (!Object.keys(draft).length){ if (logs[draftDate]) setLog(draftDate, {_deleted:true}); }
+  else setLog(draftDate, draft);
+  closeSheets(); render(); toast("Log saved");
+}
+
+/* ---------- sync ---------- */
+let sb = null, session = null, syncing = false, lastSync = null;
+function syncUI(){
+  const dirty = Object.values(logs).some(x => x.dirty), dot = $("#syncdot");
+  dot.className = "syncdot" + (session ? (dirty ? " pending" : " on") : "");
+  $("#synclabel").textContent = session ? (dirty ? "Waiting to back up" : "Backed up") : "Backup off";
+}
+async function sync(manual){
+  syncUI();
+  if (!sb || !session || syncing) { if (manual && !session) toast("Sign in to back up"); return; }
+  if (!navigator.onLine){ if (manual) toast("You are offline. Entries are saved on this phone."); return; }
+  syncing = true;
+  try {
+    const { data: rows, error } = await sb.from("daily_logs").select("log_date,data,updated_at");
+    if (error) throw error;
+    let changed = false;
+    rows.forEach(r => { const loc = logs[r.log_date];
+      if (!loc || new Date(r.updated_at) > new Date(loc.u)){ logs[r.log_date] = { data: r.data || {}, u: r.updated_at, dirty: false }; changed = true; } });
+    const up = Object.entries(logs).filter(([,v]) => v.dirty).map(([d,v]) => ({ user_id: session.user.id, log_date: d, data: v.data, updated_at: v.u }));
+    if (up.length){
+      const { error: e2 } = await sb.from("daily_logs").upsert(up, { onConflict: "user_id,log_date" });
+      if (e2) throw e2;
+      up.forEach(r => { if (logs[r.log_date] && logs[r.log_date].u === r.updated_at) logs[r.log_date].dirty = false; });
+    }
+    persist(); lastSync = new Date();
+    if (changed) render();
+    if (manual) toast("Backed up");
+  } catch(e){ if (manual) toast("Backup failed: " + (e.message || "try again")); }
+  syncing = false; syncUI();
+  if ($("#acctsheet").classList.contains("open")) renderAccount();
+}
+function renderAccount(msg){
+  const count = Object.keys(logs).filter(d => getLog(d)).length;
+  let body;
+  if (!sb) body = `<p class="muted">Backup needs an internet connection the first time. Your entries are still saved on this phone.</p>`;
+  else if (session) body = `<p>Signed in as <b>${esc(session.user.email)}</b>.</p>
+      <p class="muted small">${lastSync ? "Last backed up " + lastSync.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}) + "." : "Not backed up yet this session."}</p>
+      <button class="btn" data-syncnow>Back up now</button><button class="btn quiet" data-signout>Sign out</button>`;
+  else body = `<p class="muted">Sign in to back up your entries privately. Only your account can read them.</p>
+      <div class="field"><label for="em">Email</label><input id="em" type="email" autocomplete="email"></div>
+      <div class="field"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" minlength="8"></div>
+      <div class="field"><button class="btn" data-signin>Sign in</button><button class="btn ghost" data-signup>Create account</button></div>`;
+  $("#acctinner").innerHTML = `<div class="sheethead"><button type="button" data-close>Close</button><span></span></div>
+    <h2>Backup and account</h2>${msg ? `<p role="alert"><b>${esc(msg)}</b></p>` : ""}${body}
+    <h3>On this phone</h3><p class="muted">${count} day${count===1?"":"s"} logged.</p>
+    <button class="btn quiet" data-export>Download a copy of my data</button>
+    <label class="btn quiet" style="margin-top:10px">Restore from a copy<input type="file" id="importfile" accept="application/json,.json" hidden></label>`;
+}
+async function auth(kind){
+  const email = $("#em").value.trim(), password = $("#pw").value;
+  if (!email || password.length < 8) return renderAccount("Enter your email and a password of at least 8 characters.");
+  const res = kind === "up"
+    ? await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } })
+    : await sb.auth.signInWithPassword({ email, password });
+  if (res.error) return renderAccount(res.error.message);
+  if (kind === "up" && !res.data.session) return renderAccount("Check your email and tap the confirmation link, then come back here and sign in.");
+}
+function initSync(){
+  if (!window.supabase) return syncUI();
+  sb = window.supabase.createClient(SB_URL, SB_KEY);
+  sb.auth.onAuthStateChange((_e, s) => { session = s; syncUI(); if ($("#acctsheet").classList.contains("open")) renderAccount(); if (s) setTimeout(() => sync(), 0); });
+  window.addEventListener("online", () => sync());
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { sync(); render(); } });
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const d = b.dataset;
+  if (d.tab) return go(d.tab);
+  if (d.go) return go(d.go);
+  if (d.log) return openLog(d.log);
+  if (d.cal){ const [y,m] = calMonth.split("-").map(Number); const n = new Date(y, m-1+Number(d.cal), 1); calMonth = `${n.getFullYear()}-${pad(n.getMonth()+1)}`; return renderCalendar(); }
+  if (d.phase){ learnPhase = d.phase; return renderLearn(); }
+  if ("close" in d) return closeSheets();
+  if ("save" in d) return saveLog();
+  if ("clear" in d){ setLog(draftDate, {_deleted:true}); closeSheets(); render(); return toast("Day cleared"); }
+  if (d.shift){ readInputs(); return openLog(addDays(draftDate, Number(d.shift))); }
+  if (d.seg){ const v = Number(d.v); draft[d.seg] = draft[d.seg] === v ? 0 : v;
+    b.parentElement.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(Number(x.dataset.v) === (draft[d.seg]||0) && (draft[d.seg] !== 0 || x.dataset.v === "0")))); return; }
+  if (d.chip){ const a = draft[d.chip] = draft[d.chip] || [], i = a.indexOf(d.v); i >= 0 ? a.splice(i,1) : a.push(d.v); b.setAttribute("aria-pressed", String(i < 0)); return; }
+  if (b.id === "openAccount"){ renderAccount(); return $("#acctsheet").classList.add("open"); }
+  if ("signin" in d) return auth("in");
+  if ("signup" in d) return auth("up");
+  if ("signout" in d) return sb.auth.signOut();
+  if ("syncnow" in d) return sync(true);
+  if ("export" in d){
+    const blob = new Blob([JSON.stringify(logs, null, 1)], {type:"application/json"}), a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `almanac-${today()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.id !== "importfile" || !e.target.files[0]) return;
+  const r = new FileReader();
+  r.onload = () => { try {
+      const inc = JSON.parse(r.result); let n = 0;
+      Object.entries(inc).forEach(([d,v]) => { if (/^\d{4}-\d\d-\d\d$/.test(d) && v && typeof v.data === "object" && (!logs[d] || new Date(v.u) > new Date(logs[d].u))){ logs[d] = { data: v.data, u: v.u || new Date().toISOString(), dirty: true }; n++; } });
+      persist(); render(); renderAccount(`Restored ${n} day${n===1?"":"s"}.`); sync();
+    } catch(err){ renderAccount("That file could not be read. Choose a copy downloaded from this app."); } };
+  r.readAsText(e.target.files[0]);
+});
+
+render(); initSync();
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>

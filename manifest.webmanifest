@@ -1,0 +1,12 @@
+{
+  "name": "Almanac",
+  "short_name": "Almanac",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EDF0EA",
+  "theme_color": "#17302C",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
